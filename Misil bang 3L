@@ -5,7 +5,7 @@
 local URL_PASTEBIN = "https://pastebin.com/raw/TUPASTEBIN"
 
 -- 2. Pon aquí el link RAW de este archivo (Para el Queue on Teleport)
-local URL_MAIN_SCRIPT = "https://raw.githubusercontent.com/jakethedarks/Misil-bang-v2/refs/heads/main/Misil%20bang%20v2"
+local URL_MAIN_SCRIPT = "https://raw.githubusercontent.com/jakethedarks/Misil-bang-3L/refs/heads/main/Misil%20bang%203L"
 
 -- =========================================================
 -- SISTEMA DE PERSISTENCIA (QUEUE ON TELEPORT)
