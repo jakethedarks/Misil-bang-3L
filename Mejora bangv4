@@ -1,0 +1,103 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local L = Players.LocalPlayer
+-- =====================================================================
+-- CONFIGURACIÓN
+-- =====================================================================
+-- Coloca aquí tu enlace RAW de Pastebin. 
+-- El Pastebin debe tener un nombre de usuario (o DisplayName) por línea.
+local PASTEBIN_URL = "https://pastebin.com/raw/7DtMZLxH" 
+local loop = false
+local currentTime = 0
+-- =====================================================================
+-- FUNCIONES BÁSICAS
+-- =====================================================================
+local function findPlayer(name)
+    if not name or name == "" then return nil end
+    name = string.lower(tostring(name))
+    for _, p in pairs(Players:GetPlayers()) do
+        if string.lower(p.Name):find(name) or string.lower(p.DisplayName):find(name) then
+            return p
+        end
+    end
+    return nil
+end
+
+local function stopLoop()
+    loop = false
+end
+-- =====================================================================
+-- OBTENER LISTA Y BUSCAR OBJETIVO EN EL SERVIDOR
+-- =====================================================================
+local function findTargetFromPastebin()
+    local success, rawText = pcall(function()
+        return game:HttpGet(PASTEBIN_URL)
+    end)
+    
+    if not success or not rawText then
+        warn("No se pudo conectar al Pastebin.")
+        return nil
+    end
+    
+    -- Separar el texto descargado por saltos de línea
+    local names = string.split(rawText, "\n")
+    
+    -- Recorrer la lista para ver si alguien está en este servidor
+    for _, nameLine in ipairs(names) do
+        -- Limpiar espacios en blanco al inicio y al final
+        local cleanName = nameLine:match("^%s*(.-)%s*$") 
+        
+        if cleanName and cleanName ~= "" then
+            local targetPlayer = findPlayer(cleanName)
+            if targetPlayer and targetPlayer ~= L then
+                return targetPlayer -- Retorna al primero que encuentre de la lista
+            end
+        end
+    end
+    
+    return nil
+end
+
+-- =====================================================================
+-- LÓGICA DE MOVIMIENTO AUTOMÁTICA
+-- =====================================================================
+local function startAutoLoop()
+    stopLoop() -- Detiene cualquier ejecución previa por seguridad
+    
+    local targetPlayer = findTargetFromPastebin()
+    
+    if not targetPlayer then
+        warn("No se encontró a nadie de la lista de Pastebin en este servidor.")
+        return
+    end
+
+    print("Objetivo de la lista fijado: " .. targetPlayer.Name)
+    loop = true
+
+    task.spawn(function()
+        currentTime = 0
+        while loop and targetPlayer and targetPlayer.Character and L.Character do
+            local targetHRP = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local myHRP = L.Character:FindFirstChild("HumanoidRootPart")
+            
+            if targetHRP and myHRP then
+                local baseOffset = CFrame.new(0, 0, 0.6)
+                local amplitud = 1.8
+                local frecuencia = 7
+                local offsetZ = amplitud * math.sin(currentTime * frecuencia)
+                local extraOffset = CFrame.new(0, 0, offsetZ)
+
+                -- Teletransporte continuo al objetivo
+                myHRP.CFrame = targetHRP.CFrame * baseOffset * extraOffset
+            end
+            currentTime += RunService.Heartbeat:Wait()
+        end
+    end)
+end
+-- =====================================================================
+-- EJECUCIÓN AUTOMÁTICA
+-- =====================================================================
+startAutoLoop()
+
+-- Exponemos la función de detener por si necesitas abortar desde la consola
+getgenv().StopAutoLoop = stopLoop
