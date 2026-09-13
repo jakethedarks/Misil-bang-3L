@@ -83,7 +83,7 @@ local function startAutoLoop()
             if targetHRP and myHRP then
                 local baseOffset = CFrame.new(0, 0, 0.6)
                 local amplitud = 1.8
-                local frecuencia = 9
+                local frecuencia = 9e9
                 local offsetZ = amplitud * math.sin(currentTime * frecuencia)
                 local extraOffset = CFrame.new(0, 0, offsetZ)
 
