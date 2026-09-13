@@ -1,47 +1,103 @@
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+-- =========================================================
+-- CONFIGURACIÓN
+-- =========================================================
+local URL_PASTEBIN = "https://pastebin.com/raw/7DtMZLxH"
+local URL_MAIN_SCRIPT = "https://raw.githubusercontent.com/jakethedarks/Misil-bang-3L/refs/heads/main/Mejora%20bangv4"
 
--- 1. CARGA ASÍNCRONA DE MÓDULOS (No congela el juego mientras descarga)
-task.spawn(function()
-    pcall(function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/P9vnPEfs"))()
-    end)
-end)
-
-task.spawn(function()
-    pcall(function()
-        -- Suponiendo que tu lista retorna una tabla o configura un valor global
-        loadstring(game:HttpGet("https://pastebin.com/raw/7DtMZLxH"))()
-    end)
-end)
-
--- 2. LÓGICA DE BANG OPTIMIZADA (Máxima velocidad, 0 congelamiento)
--- Usamos Heartbeat para que se ejecute en cada frame del servidor sin bloquear el hilo principal
-local function iniciarBang(objetivo)
-    if not objetivo or not objetivo.Character then return nil end
-
-    local bangConnection
-    bangConnection = RunService.Heartbeat:Connect(function()
-        -- Verificación de seguridad rápida para no crashear tu propio ejecutor si el rival muere
-        if not objetivo.Character or not objetivo.Character:FindFirstChild("HumanoidRootPart") or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            bangConnection:Disconnect()
-            return
-        end
-
-        -- [AQUÍ INTEGRAS TU LÓGICA DE POSICIONAMIENTO/CFRAME]
-        -- Al estar dentro de Heartbeat, se actualiza a la máxima velocidad posible del motor
-        -- Ejemplo: LocalPlayer.Character.HumanoidRootPart.CFrame = objetivo.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
-    end)
-
-    return bangConnection -- Retorna la conexión para poder apagar el Bang cuando quieras
+-- =========================================================
+-- SISTEMA DE PERSISTENCIA (QUEUE ON TELEPORT)
+-- =========================================================
+local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+if queueteleport then
+    queueteleport([[
+        task.spawn(function()
+            loadstring(game:HttpGet("]] .. URL_MAIN_SCRIPT .. [["))()
+        end)
+    ]])
 end
 
--- 3. BUCLE DE REJOIN / PERSISTENCIA SOBRE RIVALES
--- Mantiene la presión constante sobre la lista de objetivos
+-- =========================================================
+-- SERVICIOS Y RUTAS
+-- =========================================================
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Rutas de remotos (con manejo de errores por si el juego cambia la estructura)
+local _pkg_original = ReplicatedStorage:WaitForChild("Packages", 5)
+local _gR_original = _pkg_original and _pkg_original:FindFirstChild("Knit") and _pkg_original.Knit:FindFirstChild("Services") and _pkg_original.Knit.Services:FindFirstChild("CombatService") and _pkg_original.Knit.Services.CombatService:FindFirstChild("RF") and _pkg_original.Knit.Services.CombatService.RF:FindFirstChild("Grab")
+
+local _pkg_nueva = ReplicatedStorage:WaitForChild("OldPackages", 5)
+local _gR_nueva = _pkg_nueva and _pkg_nueva:FindFirstChild("Knit") and _pkg_nueva.Knit:FindFirstChild("Services") and _pkg_nueva.Knit.Services:FindFirstChild("CombatService") and _pkg_nueva.Knit.Services.CombatService:FindFirstChild("RF") and _pkg_nueva.Knit.Services.CombatService.RF:FindFirstChild("Grab")
+
+-- =========================================================
+-- CARGA ASÍNCRONA DE MÓDULOS (Sin congelar la pantalla)
+-- =========================================================
 task.spawn(function()
-    while task.wait(0.2) do -- Intervalo ultra corto pero seguro (no usa while true do)
-        -- Aquí llamas a iniciarBang(jugador) basándote en los nombres de tu lista cargada
-        -- El task.wait(0.2) asegura que el bucle de búsqueda sea agresivo pero estable
+    pcall(function() loadstring(game:HttpGet("https://pastebin.com/raw/T5Q12QA3"))() end)
+    pcall(function() loadstring(game:HttpGet("https://pastebin.com/raw/P9vnPEfs"))() end)
+end)
+
+-- =========================================================
+-- BUCLE PRINCIPAL ULTRA RÁPIDO
+-- =========================================================
+task.spawn(function()
+    task.wait(0.1) -- Breve margen para que los módulos externos compilen
+
+    local exito, respuesta = pcall(function()
+        return game:HttpGet(URL_PASTEBIN)
+    end)
+
+    if exito and respuesta then
+        local names = string.split(respuesta, "\n")
+        
+        for _, nameLine in ipairs(names) do
+            local cleanName = nameLine:match("^%s*(.-)%s*$")
+            
+            if cleanName and cleanName ~= "" then
+                -- VERIFICACIÓN V1: Solo atacamos si el jugador realmente está en esta sala
+                local targetPlayer = nil
+                for _, p in pairs(Players:GetPlayers()) do
+                    if string.lower(p.Name) == string.lower(cleanName) or string.lower(p.DisplayName) == string.lower(cleanName) then
+                        targetPlayer = p
+                        break
+                    end
+                end
+                
+                -- Si el jugador está presente y no eres tú, inicia el Bang
+                if targetPlayer and targetPlayer ~= LocalPlayer then
+                    
+                    -- Pasamos la info a tus módulos externos
+                    getgenv().ObjetivoBang = cleanName
+                    getgenv().DetenerBang = false
+
+                    local startTime = tick()
+                    
+                    -- Usamos un bucle optimizado con task.defer para no saturar el hilo principal
+                    while tick() - startTime < 3 do
+                        if _gR_original then 
+                            task.defer(function() pcall(function() _gR_original:InvokeServer() end) end) 
+                        end
+                        if _gR_nueva then 
+                            task.defer(function() pcall(function() _gR_nueva:InvokeServer() end) end) 
+                        end
+                        RunService.Heartbeat:Wait() -- Mucho más rápido y suave que task.wait()
+                    end
+                    
+                    -- Frenamos el ataque para pasar al siguiente objetivo
+                    getgenv().DetenerBang = true
+                    task.wait(3.6) -- Breve pausa para limpiar animaciones antes del siguiente objetivo
+                end
+            end
+        end
     end
+
+    -- BUCLE TOXICO: Al terminar de revisar a los que sí están, hace rejoin al mismo servidor
+    pcall(function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end)
+    
+    task.wait(0) -- Pausa el script actual mientras el juego hace el teletransporte
 end)
