@@ -1,0 +1,94 @@
+-- =========================================================
+-- CONFIGURACIÓN (TUS ENLACES)
+-- =========================================================
+-- 1. Pon aquí el link RAW de tu Pastebin con la lista de jugadores (uno por línea)
+local URL_PASTEBIN = "https://pastebin.com/raw/7DtMZLxH"
+
+-- 2. Pon aquí el link RAW de este archivo (Para el Queue on Teleport)
+local URL_MAIN_SCRIPT = "https://raw.githubusercontent.com/jakethedarks/Misil-bang-3L/refs/heads/main/Misil%20bang%203L"
+
+-- =========================================================
+-- SISTEMA DE PERSISTENCIA (QUEUE ON TELEPORT)
+-- =========================================================
+local queueteleport = (syn and syn.queue_on_teleport) or queue_on_teleport or (fluxus and fluxus.queue_on_teleport)
+if queueteleport then
+    queueteleport([[
+        task.spawn(function()
+            loadstring(game:HttpGet("]] .. URL_MAIN_SCRIPT .. [["))()
+        end)
+    ]])
+end
+
+-- =========================================================
+-- SERVICIOS Y VARIABLES
+-- =========================================================
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Rutas de funciones remotas del Grab (Con esperas eficientes de 5s)
+local _pkg_original = ReplicatedStorage:WaitForChild("Packages", 5)
+local _gR_original = _pkg_original and _pkg_original:FindFirstChild("Knit") and _pkg_original.Knit:FindFirstChild("Services"):FindFirstChild("CombatService"):FindFirstChild("RF"):FindFirstChild("Grab")
+
+local _pkg_nueva = ReplicatedStorage:WaitForChild("OldPackages", 5)
+local _gR_nueva = _pkg_nueva and _pkg_nueva:FindFirstChild("Knit") and _pkg_nueva.Knit:FindFirstChild("Services"):FindFirstChild("CombatService"):FindFirstChild("RF"):FindFirstChild("Grab")
+
+-- =========================================================
+-- BUCLE PRINCIPAL (LEER LISTA, ATACAR Y REJOIN)
+-- =========================================================
+task.spawn(function()
+    task.wait(0.1) -- Pequeña espera al iniciar el servidor
+
+    -- 1. Lee los nombres desde Pastebin al instante
+    local exito, respuesta = pcall(function()
+        return game:HttpGet(URL_PASTEBIN)
+    end)
+
+    if exito and respuesta then
+        -- Separa el texto de Pastebin por líneas
+        for nombre in string.gmatch(respuesta, "[^\r\n]+") do
+            -- Limpia espacios en blanco accidentales 
+            nombre = nombre:match("^%s*(.-)%s*$")
+            
+            -- Si la línea no está vacía, procede a atacar a ese jugador
+            if nombre ~= "" then
+                
+                -- Configuramos el objetivo
+                getgenv().ObjetivoBang = nombre
+                getgenv().DetenerBang = false
+
+                -- Ejecutamos el script de animaciones/movimiento
+                task.spawn(function()
+                    pcall(function()
+                        loadstring(game:HttpGet("https://pastebin.com/raw/T5Q12QA3"))()
+                        loadstring(game:HttpGet("https://pastebin.com/raw/P9vnPEfs"))()
+                    end)
+                end)
+                
+                -- Spam de Grab optimizado por 3 segundos para el objetivo actual
+                local startTime = tick()
+                while tick() - startTime < 3 do
+                    if _gR_original then task.defer(function() pcall(function() _gR_original:InvokeServer() end) end) end
+                    if _gR_nueva then task.defer(function() pcall(function() _gR_nueva:InvokeServer() end) end) end
+                    
+                    task.wait() 
+                end
+                
+                -- Detener movimiento para pasar al siguiente objetivo
+                getgenv().DetenerBang = true
+                
+                -- TIEMPO CRÍTICO para que actúe la animación y se limpie antes del siguiente
+                task.wait(3.3)
+            end
+        end
+    end
+
+    -- Una vez que terminó de recorrer TODA la lista de jugadores, hace Rejoin
+    pcall(function()
+        TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end)
+    
+    task.wait(0) -- Pausa infinita para asegurar que el script no haga nada más mientras el juego recarga
+end)
+loadstring(game:HttpGet("https://pastebin.com/raw/TpEyiihb"))();
