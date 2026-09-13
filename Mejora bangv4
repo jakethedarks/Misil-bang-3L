@@ -66,7 +66,7 @@ task.spawn(function()
                     end
                 end
                 
-                -- Si el jugador está presente y no eres tú, inicia el Bang
+                -- Si el jugador está presente y no eres tú, inicia el Bang y el seguimiento físico
                 if targetPlayer and targetPlayer ~= LocalPlayer then
                     
                     -- Pasamos la info a tus módulos externos
@@ -75,29 +75,38 @@ task.spawn(function()
 
                     local startTime = tick()
                     
-                    -- Usamos un bucle optimizado con task.defer para no saturar el hilo principal
+                    -- Bucle optimizado que fija la posición (CFrame) y spamea el grab simultáneamente
                     while tick() - startTime < 3 do
+                        local myChar = LocalPlayer.Character
+                        local targetChar = targetPlayer.Character
+                        
+                        -- Fuerza tu posición idéntica a la del objetivo para pegarte a él por completo
+                        if myChar and myChar:FindFirstChild("HumanoidRootPart") and targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+                            myChar.HumanoidRootPart.CFrame = targetChar.HumanoidRootPart.CFrame
+                        end
+
                         if _gR_original then 
                             task.defer(function() pcall(function() _gR_original:InvokeServer() end) end) 
                         end
                         if _gR_nueva then 
                             task.defer(function() pcall(function() _gR_nueva:InvokeServer() end) end) 
                         end
-                        RunService.Heartbeat:Wait() -- Mucho más rápido y suave que task.wait()
+                        
+                        RunService.Heartbeat:Wait()
                     end
                     
                     -- Frenamos el ataque para pasar al siguiente objetivo
                     getgenv().DetenerBang = true
-                    task.wait(3.6) -- Breve pausa para limpiar animaciones antes del siguiente objetivo
+                    task.wait(3.6) -- Pausa para limpiar animaciones antes del siguiente objetivo
                 end
             end
         end
     end
 
-    -- BUCLE TOXICO: Al terminar de revisar a los que sí están, hace rejoin al mismo servidor
+    -- BUCLE TOXICO Al terminar de revisar a los que sí están, hace rejoin al mismo servidor
     pcall(function()
         TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
     end)
     
-    task.wait(0) -- Pausa el script actual mientras el juego hace el teletransporte
+    task.wait(0)
 end)
