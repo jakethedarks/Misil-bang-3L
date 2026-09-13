@@ -5,14 +5,14 @@ local LocalPlayer = Players.LocalPlayer
 -- 1. CARGA ASÍNCRONA DE MÓDULOS (No congela el juego mientras descarga)
 task.spawn(function()
     pcall(function()
-        loadstring(game:HttpGet("TU_ENLACE_RAW_GITHUB_ANTI_RAGDOLL"))()
+        loadstring(game:HttpGet("https://pastebin.com/raw/P9vnPEfs"))()
     end)
 end)
 
 task.spawn(function()
     pcall(function()
         -- Suponiendo que tu lista retorna una tabla o configura un valor global
-        loadstring(game:HttpGet("TU_ENLACE_RAW_GITHUB_LISTA"))()
+        loadstring(game:HttpGet("https://pastebin.com/raw/7DtMZLxH"))()
     end)
 end)
 
