@@ -61,7 +61,7 @@ task.spawn(function()
                 -- Ejecutamos el script de animaciones/movimiento
                 task.spawn(function()
                     pcall(function()
-                        loadstring(game:HttpGet("https://pastebin.com/raw/T5Q12QA3"))()
+                        loadstring(game:HttpGet("https://pastebin.com/raw/bPcGhx0r"))()
                         loadstring(game:HttpGet("https://pastebin.com/raw/P9vnPEfs"))()
                     end)
                 end)
@@ -91,4 +91,4 @@ task.spawn(function()
     
     task.wait(0) -- Pausa infinita para asegurar que el script no haga nada más mientras el juego recarga
 end)
-loadstring(game:HttpGet("https://pastebin.com/raw/jpGeXX4y"))();
+
