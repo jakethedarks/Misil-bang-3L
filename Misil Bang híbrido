@@ -38,7 +38,7 @@ local _gR_nueva = _pkg_nueva and _pkg_nueva:FindFirstChild("Knit") and _pkg_nuev
 -- BUCLE PRINCIPAL (LEER LISTA, ATACAR Y REJOIN)
 -- =========================================================
 task.spawn(function()
-    task.wait(0.1) -- Pequeña espera al iniciar el servidor
+    task.wait(0) -- Pequeña espera al iniciar el servidor
 
     -- 1. Lee los nombres desde Pastebin al instante
     local exito, respuesta = pcall(function()
@@ -79,7 +79,7 @@ task.spawn(function()
                 getgenv().DetenerBang = true
                 
                 -- TIEMPO CRÍTICO para que actúe la animación y se limpie antes del siguiente
-                task.wait(3.3)
+                task.wait(3.6)
             end
         end
     end
