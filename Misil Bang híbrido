@@ -79,7 +79,7 @@ task.spawn(function()
                 getgenv().DetenerBang = true
                 
                 -- TIEMPO CRÍTICO para que actúe la animación y se limpie antes del siguiente
-                task.wait(3.6)
+                task.wait(6.6)
             end
         end
     end
